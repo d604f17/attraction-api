@@ -35,7 +35,7 @@ app.get('/:country*', function (req, res) {
     lp.city(req.params.country + req.params[0]).then(function (city) {
         return city.sights();
     }).then(function (sights) {
-        sights.splice(5);
+        sights.splice(10);
 
         var geocodes = sights.map(function (sight) {
             return geocode.query(sight.city.country + ' ' + sight.city.city + ' ' + sight.name);
@@ -73,6 +73,9 @@ app.get('/:country*', function (req, res) {
             }).catch(reject);
         });
     }).then(function (sights) {
+        sights.sort(function (a, b) {
+            return b.popularity - a.popularity;
+        });
         res.json(sights);
     }).catch(console.error);
 });

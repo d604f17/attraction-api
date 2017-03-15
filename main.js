@@ -26,7 +26,7 @@ app.get('/:country*', (req, res) => {
             return city.sights();
         })
         .then(sights => {
-            sights.splice(5);
+            sights.splice(10);
 
             let geocodes = sights.map(sight => {
                 return geocode.query(`${sight.city.country} ${sight.city.city} ${sight.name}`);
@@ -70,6 +70,7 @@ app.get('/:country*', (req, res) => {
             });
         })
         .then(sights => {
+            sights.sort((a,b) => b.popularity - a.popularity);
             res.json(sights);
         })
         .catch(console.error)
