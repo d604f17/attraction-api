@@ -1,8 +1,10 @@
 'use strict';
 
-var _express = require('express');
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
-var _express2 = _interopRequireDefault(_express);
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _lonelyplanetApi = require('lonelyplanet-api');
 
@@ -18,67 +20,89 @@ var _geocodeApi2 = _interopRequireDefault(_geocodeApi);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var app = (0, _express2.default)();
-var flickr = new _flickrApi2.default('85f11febb88e3a4d49342a95b7bcf1e8', 'json');
-var geocode = new _geocodeApi2.default('AIzaSyDfZBp51fjQZwk4QogCZIUtRaz8z96G0Ks', 'json');
-var lp = new _lonelyplanetApi2.default();
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-app.get('/', function (req, res) {
-    res.json({
-        name: 'attractions-api',
-        version: '0.0.1',
-        authors: ['Rasmus Nørskov (rhnorskov)', 'Mathias Wieland (mathias.wieland)', 'Andreas Sommerset (asomm)']
+var getLocations = function getLocations(sights, geocode) {
+  var geocodes = sights.map(function (sight) {
+    return geocode.query(sight.city.country + ' ' + sight.city.city + ' ' + sight.name);
+  });
+
+  return new Promise(function (resolve) {
+    Promise.all(geocodes).then(function (geocodes) {
+      geocodes = geocodes.filter(function (geocodes) {
+        return geocodes.status === 'OK';
+      });
+
+      var locations = geocodes.map(function (geocode) {
+        return geocode.results[0].geometry.location;
+      });
+
+      resolve(sights.map(function (sight, index) {
+        return Object.assign(sight, locations[index]);
+      }));
     });
-});
+  });
+};
 
-app.get('/:country*', function (req, res) {
-    lp.city(req.params.country + req.params[0]).then(function (city) {
-        return city.sights();
-    }).then(function (sights) {
-        sights.splice(10);
+var getPopularity = function getPopularity(sights, flickr) {
+  var photos = sights.map(function (sight) {
+    return flickr.query('photos.search', {
+      lat: sight.lat,
+      lon: sight.lng,
+      text: sight.name
+    });
+  });
 
-        var geocodes = sights.map(function (sight) {
-            return geocode.query(sight.city.country + ' ' + sight.city.city + ' ' + sight.name);
-        });
+  return new Promise(function (resolve) {
+    Promise.all(photos).then(function (data) {
+      var populaties = data.map(function (photos) {
+        return photos.photos.total;
+      });
 
-        return new Promise(function (resolve, reject) {
-            Promise.all(geocodes).then(function (data) {
-                var locations = data.map(function (geocode) {
-                    return geocode.results[0].geometry.location;
-                });
+      resolve(sights.map(function (sight, index) {
+        return Object.assign(sight, { popularity: parseInt(populaties[index]) });
+      }));
+    });
+  });
+};
 
-                resolve(sights.map(function (sight, index) {
-                    return Object.assign(sight, locations[index]);
-                }));
-            }).catch(reject);
-        });
-    }).then(function (sights) {
-        var photos = sights.map(function (sight) {
-            return flickr.query('photos.search', {
-                lat: sight.lat,
-                lon: sight.lng,
-                text: sight.name
-            });
-        });
+var AttractionAPI = function () {
+  function AttractionAPI(apiKeys) {
+    var limit = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
-        return new Promise(function (resolve, reject) {
-            Promise.all(photos).then(function (data) {
-                var populaties = data.map(function (photos) {
-                    return photos.photos.total;
-                });
+    _classCallCheck(this, AttractionAPI);
 
-                resolve(sights.map(function (sight, index) {
-                    return Object.assign(sight, { popularity: parseInt(populaties[index]) });
-                }));
-            }).catch(reject);
-        });
-    }).then(function (sights) {
-        sights.sort(function (a, b) {
+    this.limit = limit;
+    this.flickr = new _flickrApi2.default(apiKeys.flickr, 'json');
+    this.geocode = new _geocodeApi2.default(apiKeys.geocode, 'json');
+    this.lp = new _lonelyplanetApi2.default();
+  }
+
+  _createClass(AttractionAPI, [{
+    key: 'query',
+    value: function query(city) {
+      var _this = this;
+
+      return new Promise(function (resolve) {
+        _this.lp.city(city).then(function (city) {
+          return city.sights();
+        }).then(function (sights) {
+          sights.splice(50);
+          return getLocations(sights, _this.geocode);
+        }).then(function (sights) {
+          return getPopularity(sights, _this.flickr);
+        }).then(function (sights) {
+          sights.sort(function (a, b) {
             return b.popularity - a.popularity;
-        });
-        res.json(sights);
-    }).catch(console.error);
-});
+          });
+          resolve(sights);
+        }).catch(console.log);
+      });
+    }
+  }]);
 
-app.listen(process.env.port || 3000);
+  return AttractionAPI;
+}();
+
+exports.default = AttractionAPI;
 //# sourceMappingURL=main.js.map

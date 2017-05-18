@@ -1,79 +1,74 @@
-import express from 'express';
 import LonelyPlanet from 'lonelyplanet-api';
 import Flickr from 'flickr-api';
 import Geocode from 'geocode-api';
 
-const app = express();
-const flickr = new Flickr('85f11febb88e3a4d49342a95b7bcf1e8', 'json');
-const geocode = new Geocode('AIzaSyDfZBp51fjQZwk4QogCZIUtRaz8z96G0Ks', 'json');
-const lp = new LonelyPlanet();
+const getLocations = (sights, geocode) => {
+  let geocodes = sights.map(sight => {
+    return geocode.query(`${sight.city.country} ${sight.city.city} ${sight.name}`);
+  });
 
-app.get('/', (req, res) => {
-    res.json({
-        name: 'attractions-api',
-        version: '0.0.1',
-        authors: [
-            'Rasmus Nørskov (rhnorskov)',
-            'Mathias Wieland (mathias.wieland)',
-            'Andreas Sommerset (asomm)'
-        ]
-    })
-});
+  return new Promise(resolve => {
+    Promise.all(geocodes).then(geocodes => {
+      geocodes = geocodes.filter(geocodes => geocodes.status === 'OK');
 
-app.get('/:country*', (req, res) => {
-    lp.city(req.params.country + req.params[0])
-        .then(city => {
-            return city.sights();
-        })
-        .then(sights => {
-            sights.splice(10);
+      let locations = geocodes.map(geocode => {
+        return geocode.results[0].geometry.location;
+      });
 
-            let geocodes = sights.map(sight => {
-                return geocode.query(`${sight.city.country} ${sight.city.city} ${sight.name}`);
-            });
+      resolve(sights.map((sight, index) => {
+        return Object.assign(sight, locations[index]);
+      }));
+    });
+  });
+};
 
-            return new Promise((resolve, reject) => {
-                Promise.all(geocodes)
-                    .then(data => {
-                        let locations = data.map(geocode => {
-                            return geocode.results[0].geometry.location;
-                        });
+const getPopularity = (sights, flickr) => {
+  let photos = sights.map(sight => (
+      flickr.query('photos.search', {
+        lat: sight.lat,
+        lon: sight.lng,
+        text: sight.name,
+      })
+  ));
 
-                        resolve(sights.map((sight, index) => {
-                            return Object.assign(sight, locations[index]);
-                        }));
-                    })
-                    .catch(reject);
-            });
-        })
-        .then(sights => {
-            let photos = sights.map(sight => {
-                return flickr.query('photos.search', {
-                    lat: sight.lat,
-                    lon: sight.lng,
-                    text: sight.name
-                })
-            });
+  return new Promise(resolve => {
+    Promise.all(photos).then(data => {
+      let populaties = data.map(photos => {
+        return photos.photos.total;
+      });
 
-            return new Promise((resolve, reject) => {
-                Promise.all(photos)
-                    .then(data => {
-                        let populaties = data.map(photos => {
-                            return photos.photos.total;
-                        });
+      resolve(sights.map((sight, index) => {
+        return Object.assign(sight, {popularity: parseInt(populaties[index])});
+      }));
+    });
+  });
+};
 
-                        resolve(sights.map((sight, index) => {
-                            return Object.assign(sight, {popularity: parseInt(populaties[index])});
-                        }));
-                    })
-                    .catch(reject);
-            });
-        })
-        .then(sights => {
-            sights.sort((a,b) => b.popularity - a.popularity);
-            res.json(sights);
-        })
-        .catch(console.error)
-});
+class AttractionAPI {
+  constructor(apiKeys, limit = 0) {
+    this.limit = limit;
+    this.flickr = new Flickr(apiKeys.flickr, 'json');
+    this.geocode = new Geocode(apiKeys.geocode, 'json');
+    this.lp = new LonelyPlanet();
+  }
 
-app.listen(process.env.port || 3000);
+  query(city) {
+    return new Promise(resolve => {
+      this.lp.city(city).then(city => {
+        return city.sights();
+      }).then(sights => {
+        sights.splice(50);
+        return getLocations(sights, this.geocode);
+      }).then(sights => {
+        return getPopularity(sights, this.flickr);
+      }).then(sights => {
+        sights.sort((a, b) => b.popularity - a.popularity);
+        resolve(sights);
+      }).catch(console.log);
+    });
+  }
+}
+
+export default AttractionAPI;
+
+
