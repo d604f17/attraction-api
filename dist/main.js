@@ -105,4 +105,3 @@ var AttractionAPI = function () {
 }();
 
 exports.default = AttractionAPI;
-//# sourceMappingURL=main.js.map

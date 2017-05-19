@@ -1,14 +1,15 @@
 {
   "name": "attraction-api",
   "version": "0.0.1",
+  "main": "dist/main.js",
   "scripts": {
-    "start": "node dist/main.js"
+    "start": "node dist/main.js",
+    "build": "babel main.js -o dist/main.js"
   },
   "dependencies": {
     "flickr-api" : "git://github.com/d604f17/flickr-api.git",
     "geocode-api" : "git://github.com/d604f17/geocode-api.git",
-    "lonelyplanet-api" : "git://github.com/d604f17/lonelyplanet-api.git",
-    "express": "^4.15.2"
+    "lonelyplanet-api" : "git://github.com/d604f17/lonelyplanet-api.git"
   },
   "devDependencies": {
     "babel-cli": "^6.22.2",
