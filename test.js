@@ -7,5 +7,5 @@ const attractions = new AttractionAPI({
 }, 10);
 
 attractions.query('denmark/copenhagen').then(sights => {
-  console.log(sights);
+  console.log(sights.length);
 }).catch(console.error);

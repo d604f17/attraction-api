@@ -16,6 +16,6 @@ var attractions = new _main2.default({
 }, 10);
 
 attractions.query('denmark/copenhagen').then(function (sights) {
-  console.log(sights);
+  console.log(sights.length);
 }).catch(console.error);
 //# sourceMappingURL=test.js.map

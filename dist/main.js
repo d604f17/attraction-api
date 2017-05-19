@@ -87,7 +87,7 @@ var Attractions = function () {
         _this.lp.city(city).then(function (city) {
           return city.sights();
         }).then(function (sights) {
-          sights.splice(50);
+          if (_this.limit > 0) sights.splice(_this.limit);
           return getLocations(sights, _this.geocode);
         }).then(function (sights) {
           return getPopularity(sights, _this.flickr);

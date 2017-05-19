@@ -57,7 +57,8 @@ class Attractions {
       this.lp.city(city).then(city => {
         return city.sights();
       }).then(sights => {
-        sights.splice(50);
+        if (this.limit > 0)
+          sights.splice(this.limit);
         return getLocations(sights, this.geocode);
       }).then(sights => {
         return getPopularity(sights, this.flickr);
