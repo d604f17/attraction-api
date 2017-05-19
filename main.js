@@ -44,7 +44,7 @@ const getPopularity = (sights, flickr) => {
   });
 };
 
-class AttractionAPI {
+class Attractions {
   constructor(apiKeys, limit = 0) {
     this.limit = limit;
     this.flickr = new Flickr(apiKeys.flickr, 'json');

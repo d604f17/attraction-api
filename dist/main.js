@@ -66,11 +66,11 @@ var getPopularity = function getPopularity(sights, flickr) {
   });
 };
 
-var AttractionAPI = function () {
-  function AttractionAPI(apiKeys) {
+var Attractions = function () {
+  function Attractions(apiKeys) {
     var limit = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
-    _classCallCheck(this, AttractionAPI);
+    _classCallCheck(this, Attractions);
 
     this.limit = limit;
     this.flickr = new _flickrApi2.default(apiKeys.flickr, 'json');
@@ -78,7 +78,7 @@ var AttractionAPI = function () {
     this.lp = new _lonelyplanetApi2.default();
   }
 
-  _createClass(AttractionAPI, [{
+  _createClass(Attractions, [{
     key: 'query',
     value: function query(city) {
       var _this = this;
@@ -101,7 +101,7 @@ var AttractionAPI = function () {
     }
   }]);
 
-  return AttractionAPI;
+  return Attractions;
 }();
 
 exports.default = AttractionAPI;
