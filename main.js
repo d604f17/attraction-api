@@ -69,6 +69,6 @@ class Attractions {
   }
 }
 
-export default AttractionAPI;
+export default Attractions;
 
 

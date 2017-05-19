@@ -104,4 +104,5 @@ var Attractions = function () {
   return Attractions;
 }();
 
-exports.default = AttractionAPI;
+exports.default = Attractions;
+//# sourceMappingURL=main.js.map
